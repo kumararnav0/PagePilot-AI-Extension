@@ -41,6 +41,39 @@
     const el = document.createElement('div');
     el.className = 'pagepilot-overlay';
     
+    // Check if this is an error message
+    const isError = action === 'error' || (title && title.toLowerCase().includes('error')) || (body && body.includes('Chrome AI'));
+    
+    if (isError) {
+      // Show error with prominent styling and link to options
+      el.innerHTML = `
+        <h4 style="color: #d32f2f;">⚠️ ${escapeHtml(title || 'Error')}</h4>
+        <pre style="background: #ffebee; padding: 12px; border-left: 3px solid #d32f2f;">${escapeHtml(body || '')}</pre>
+        <p style="margin-top: 10px; font-size: 12px;">
+          💡 <a href="#" id="openOptions" style="color: #1a73e8; text-decoration: underline;">Open Options</a> to configure Gemini fallback for cloud processing.
+        </p>
+      `;
+      
+      // Add listener to open options
+      setTimeout(() => {
+        const optionsLink = el.querySelector('#openOptions');
+        if (optionsLink) {
+          optionsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ type: 'pagepilot.openOptions' });
+            el.remove();
+          });
+        }
+      }, 0);
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = 'Close';
+      closeBtn.addEventListener('click', () => el.remove());
+      el.appendChild(closeBtn);
+      document.body.appendChild(el);
+      return;
+    }
+    
     // Store selection information BEFORE creating overlay
     const sel = window.getSelection();
     const hasSelection = sel && sel.rangeCount > 0 && !sel.isCollapsed;

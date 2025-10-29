@@ -79,17 +79,17 @@
       promptStatus, summarizerStatus, translatorStatus, writerStatus, rewriterStatus, proofreaderStatus
     });
 
-    // Check if APIs are usable (available OR downloadable)
-    // Don't test create() in detection as it can trigger downloads or fail on first call
-    const isUsable = (status) => status === 'available' || status === 'downloadable' || status === 'downloading';
+    // ONLY mark APIs as available if they are truly "readily" available
+    // "downloadable" and "downloading" mean NOT ready yet
+    const isReady = (status) => status === 'readily' || status === 'available';
 
     const result = {
-      hasPrompt: isUsable(promptStatus),
-      hasSummarizer: isUsable(summarizerStatus),
-      hasTranslator: isUsable(translatorStatus),
-      hasWriter: isUsable(writerStatus),
-      hasRewriter: isUsable(rewriterStatus),
-      hasProofreader: isUsable(writerStatus), // Proofreader uses Writer API
+      hasPrompt: isReady(promptStatus),
+      hasSummarizer: isReady(summarizerStatus),
+      hasTranslator: isReady(translatorStatus),
+      hasWriter: isReady(writerStatus),
+      hasRewriter: isReady(rewriterStatus),
+      hasProofreader: isReady(writerStatus), // Proofreader uses Writer API
       promptStatus,
       summarizerStatus,
       translatorStatus,
@@ -140,6 +140,14 @@
 
   function identity(text){ return text || ''; }
 
+  // Helper: Add timeout to promises
+  function withTimeout(promise, ms, errorMsg = 'Operation timed out') {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
+    ]);
+  }
+
   // --- Core operations ---
   async function summarize(text) {
     const settings = await getSettings();
@@ -148,12 +156,28 @@
     // https://developer.chrome.com/docs/ai/summarizer-api
     try {
       if (built.hasSummarizer && global.Summarizer) {
-        const summarizer = await global.Summarizer.create({ type: 'key-points', format: 'plain-text', length: 'medium' });
-        const result = await summarizer.summarize(text);
+        const summarizer = await withTimeout(
+          global.Summarizer.create({ type: 'key-points', format: 'plain-text', length: 'medium' }),
+          10000,
+          'Chrome AI Summarizer is not ready. Please ensure Chrome AI requirements are met or enable Gemini fallback in Options.'
+        );
+        const result = await withTimeout(
+          summarizer.summarize(text),
+          30000,
+          'Summarization timed out'
+        );
         if (result) return { ok: true, data: String(result), meta: { source: 'builtin' } };
       }
     } catch (e) { 
       console.warn('[PagePilot] summarizer built-in failed:', e);
+      // If no cloud fallback, return error to user
+      if (!settings.useCloudFallback) {
+        return { 
+          ok: false, 
+          error: e.message || 'Chrome AI Summarizer failed. Enable Gemini fallback in Options for cloud processing.',
+          meta: { source: 'error' }
+        };
+      }
     }
     // Cloud fallback
     if (settings.useCloudFallback) {
@@ -180,18 +204,34 @@
           sourceLanguage: source, 
           targetLanguage: lang 
         });
-        if (availability === 'available' || availability === 'downloadable') {
-          const translator = await global.Translator.create({ 
-            sourceLanguage: source, 
-            targetLanguage: lang 
-          });
-          const result = await translator.translate(text);
+        if (availability === 'readily' || availability === 'available') {
+          const translator = await withTimeout(
+            global.Translator.create({ 
+              sourceLanguage: source, 
+              targetLanguage: lang 
+            }),
+            10000,
+            'Chrome AI Translator is not ready. Please ensure Chrome AI requirements are met or enable Gemini fallback in Options.'
+          );
+          const result = await withTimeout(
+            translator.translate(text),
+            30000,
+            'Translation timed out'
+          );
           translator?.destroy?.();
           if (result) return { ok: true, data: String(result), meta: { source: 'builtin' } };
         }
       }
     } catch (e) {
       console.warn('[PagePilot] translator built-in failed:', e);
+      // If no cloud fallback, return error to user
+      if (!settings.useCloudFallback) {
+        return { 
+          ok: false, 
+          error: e.message || 'Chrome AI Translator failed. Enable Gemini fallback in Options for cloud processing.',
+          meta: { source: 'error' }
+        };
+      }
     }
     if (settings.useCloudFallback) {
       const system = `Translate the text into ${lang}. Respond with only the translation.`;
@@ -208,12 +248,28 @@
     // https://developer.chrome.com/docs/ai/writer-api
     try {
       if (built.hasWriter && global.Writer) {
-        const writer = await global.Writer.create({ tone: 'neutral', format: 'plain-text', sharedContext: 'Proofread and correct grammar and spelling. Preserve meaning and tone. Return only the corrected text with no explanations.' });
-        const result = await writer.write(text);
+        const writer = await withTimeout(
+          global.Writer.create({ tone: 'neutral', format: 'plain-text', sharedContext: 'Proofread and correct grammar and spelling. Preserve meaning and tone. Return only the corrected text with no explanations.' }),
+          10000,
+          'Chrome AI Writer is not ready. Please ensure Chrome AI requirements are met or enable Gemini fallback in Options.'
+        );
+        const result = await withTimeout(
+          writer.write(text),
+          30000,
+          'Proofreading timed out'
+        );
         if (result) return { ok: true, data: String(result), meta: { source: 'builtin' } };
       }
     } catch (e) {
-      console.warn('[PagePilot] proofreader built-in failed:', e);
+      console.warn('[PagePilot] writer built-in failed:', e);
+      // If no cloud fallback, return error to user
+      if (!settings.useCloudFallback) {
+        return { 
+          ok: false, 
+          error: e.message || 'Chrome AI Writer failed. Enable Gemini fallback in Options for cloud processing.',
+          meta: { source: 'error' }
+        };
+      }
     }
     if (settings.useCloudFallback) {
       const system = 'Proofread and correct grammar and spelling. Preserve meaning and tone. Return only the corrected text, no explanations, no notes.';
@@ -242,13 +298,29 @@
         if (lowerStyle.includes('concise') || lowerStyle.includes('shorter')) options.length = 'shorter';
         if (lowerStyle.includes('longer')) options.length = 'longer';
         
-        const rewriter = await global.Rewriter.create(options);
-        const result = await rewriter.rewrite(text);
+        const rewriter = await withTimeout(
+          global.Rewriter.create(options),
+          10000,
+          'Chrome AI Rewriter is not ready. Please ensure Chrome AI requirements are met or enable Gemini fallback in Options.'
+        );
+        const result = await withTimeout(
+          rewriter.rewrite(text),
+          30000,
+          'Rewriting timed out'
+        );
         rewriter?.destroy?.();
         if (result) return { ok: true, data: String(result), meta: { source: 'builtin' } };
       }
     } catch (e) {
       console.warn('[PagePilot] rewriter built-in failed:', e);
+      // If no cloud fallback, return error to user
+      if (!settings.useCloudFallback) {
+        return { 
+          ok: false, 
+          error: e.message || 'Chrome AI Rewriter failed. Enable Gemini fallback in Options for cloud processing.',
+          meta: { source: 'error' }
+        };
+      }
     }
     if (settings.useCloudFallback) {
       const tone = style || 'clear and concise';
@@ -266,12 +338,28 @@
     // https://developer.chrome.com/docs/ai/writer-api
     try {
       if (built.hasWriter && global.Writer) {
-        const writer = await global.Writer.create({ tone: 'neutral', format: 'plain-text' });
-        const result = await writer.write(prompt);
+        const writer = await withTimeout(
+          global.Writer.create({ tone: 'neutral', format: 'plain-text' }),
+          10000,
+          'Chrome AI Writer is not ready. Please ensure Chrome AI requirements are met or enable Gemini fallback in Options.'
+        );
+        const result = await withTimeout(
+          writer.write(prompt),
+          30000,
+          'Writing timed out'
+        );
         if (result) return { ok: true, data: String(result), meta: { source: 'builtin' } };
       }
     } catch (e) {
       console.warn('[PagePilot] writer built-in failed:', e);
+      // If no cloud fallback, return error to user
+      if (!settings.useCloudFallback) {
+        return { 
+          ok: false, 
+          error: e.message || 'Chrome AI Writer failed. Enable Gemini fallback in Options for cloud processing.',
+          meta: { source: 'error' }
+        };
+      }
     }
     if (settings.useCloudFallback) {
       const system = 'Write an original response that is helpful and engaging.';
@@ -290,11 +378,19 @@
     try {
       if (built.hasPrompt && global.LanguageModel) {
         const outLang = /^(en|es|ja)$/i.test(settings.defaultTargetLang) ? settings.defaultTargetLang.toLowerCase() : 'en';
-        const session = await global.LanguageModel.create({ 
-          systemPrompt: 'Respond in JSON only. If not structured, infer a reasonable JSON structure.',
-          outputLanguage: outLang
-        });
-        const result = await session.prompt(promptText);
+        const session = await withTimeout(
+          global.LanguageModel.create({ 
+            systemPrompt: 'Respond in JSON only. If not structured, infer a reasonable JSON structure.',
+            outputLanguage: outLang
+          }),
+          10000,
+          'Chrome AI Prompt API is not ready. Please ensure you are enrolled in the Early Preview Program or enable Gemini fallback in Options.'
+        );
+        const result = await withTimeout(
+          session.prompt(promptText),
+          30000,
+          'Prompt timed out'
+        );
         if (result) {
           try { return { ok: true, data: JSON.parse(result), meta: { source: 'builtin' } }; }
           catch(_) { return { ok: true, data: result, meta: { source: 'builtin' } }; }
@@ -302,6 +398,14 @@
       }
     } catch (e) {
       console.warn('[PagePilot] prompt built-in failed:', e);
+      // If no cloud fallback, return error to user
+      if (!settings.useCloudFallback) {
+        return { 
+          ok: false, 
+          error: e.message || 'Chrome AI Prompt API failed. Ensure you are enrolled in Early Preview Program or enable Gemini fallback in Options.',
+          meta: { source: 'error' }
+        };
+      }
     }
     if (settings.useCloudFallback) {
       const system = 'Respond in JSON only. If not structured, infer a reasonable JSON structure.';

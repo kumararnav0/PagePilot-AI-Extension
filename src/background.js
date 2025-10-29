@@ -240,6 +240,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   console.info('[PagePilot] onMessage:', msg?.type);
   (async () => {
     try {
+      if (msg?.type === 'pagepilot.openOptions') {
+        // Open options page
+        chrome.runtime.openOptionsPage();
+        return;
+      }
       if (msg?.type === 'pagepilot.popupAction') {
         const { action, text, opts } = msg;
         let r;
