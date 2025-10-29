@@ -74,7 +74,7 @@ Turn any webpage into an AI‑powered workspace. Privacy‑first reading and wri
      Wait for the download to complete (~22 GB, may take 5–10 minutes).
 3. **Verify Installation**
    ```javascript
-   await ai.languageModel.availability();
+   await LanguageModel.availability();
    // Should return: "available"
    ```
 4. **Check Model Status**
