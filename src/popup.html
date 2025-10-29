@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PagePilot</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>PagePilot</h1>
+    <p class="tagline">Privacy-first AI that runs on your device</p>
+    <a class="link" href="options.html" target="_blank">Settings</a>
+  </header>
+  <main>
+    <textarea id="input" rows="6" placeholder="Type or paste text here. Or select text on the page, then click 'Use Selection'."></textarea>
+
+    <div class="row">
+      <button id="useSelection">Use Selection</button>
+      <button id="refreshStatus" title="Re-check model availability">🔄 Refresh</button>
+      <span id="caps"></span>
+    </div>
+
+    <div class="actions">
+      <button data-act="summarize">Summarize</button>
+      <button data-act="proofread">Proofread</button>
+      <button data-act="rewrite">Rewrite</button>
+      <button data-act="simplify">Simplify</button>
+      <button data-act="translate">Translate</button>
+      <button data-act="write">Write</button>
+      <button data-act="prompt">Prompt➜JSON</button>
+    </div>
+
+    <div id="optionsRow" class="row">
+      <label>Lang <input id="lang" value="en" /></label>
+      <label>Style <input id="style" value="concise" /></label>
+    </div>
+
+    <section id="output"></section>
+  </main>
+  <script src="aiAdapter.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

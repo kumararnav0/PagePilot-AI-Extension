@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PagePilot Settings</title>
+  <style>
+    body{margin:0; color:#e6e6e6; background:#0f1115; font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
+    main{max-width:720px; margin:0 auto; padding:18px}
+    input[type="text"], input[type="password"]{width:100%; background:#141821; color:#e6e6e6; border:1px solid #2a2e39; border-radius:8px; padding:8px}
+    label{display:block; margin:12px 0}
+    .row{display:flex; gap:10px; align-items:center}
+    button{background:#1a1f2a; color:#e6e6e6; border:1px solid #2a2e39; padding:8px 12px; border-radius:8px; cursor:pointer}
+    .hint{color:#98a2b3; font-size:13px}
+    code{background:#141821; padding:2px 4px; border-radius:4px}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>PagePilot Settings</h1>
+    <p class="hint">Built-in Chrome AI runs fully on-device. If your browser doesn’t expose these Early Preview APIs, you can enable a temporary cloud fallback via Gemini.</p>
+
+    <label class="row"><input id="useCloudFallback" type="checkbox"> Enable Gemini fallback</label>
+    <label>Gemini API Key <input id="geminiApiKey" type="password" placeholder="AIza..." /></label>
+    <label>Gemini Model <input id="geminiModel" type="text" value="gemini-1.5-flash" /></label>
+    <label>Default Target Language <input id="defaultTargetLang" type="text" value="en" /></label>
+    <label>Max Summary Sentences <input id="maxSummarySentences" type="text" value="3" /></label>
+
+    <div class="row">
+      <button id="save">Save</button>
+      <span id="status" class="hint"></span>
+    </div>
+
+    <p class="hint">Note: API key is stored in <code>chrome.storage.sync</code> for convenience; rotate/delete it after judging.</p>
+  </main>
+  <script src="aiAdapter.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "PagePilot – Chrome Built‑in AI Sidekick",
+  "version": "0.1.0",
+  "description": "Summarize, translate, proofread, rewrite, and write on any webpage using Chrome's built‑in on‑device AI with an optional Gemini fallback.",
+  "action": {
+    "default_title": "PagePilot",
+    "default_popup": "src/popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "options_page": "src/options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "commands": {
+    "summarize": {
+      "suggested_key": {
+        "default": "Alt+S"
+      },
+      "description": "Summarize selection"
+    },
+    "translate": {
+      "suggested_key": {
+        "default": "Alt+T"
+      },
+      "description": "Translate selection"
+    },
+    "proofread": {
+      "suggested_key": {
+        "default": "Alt+P"
+      },
+      "description": "Proofread selection"
+    },
+    "simplify": {
+      "suggested_key": {
+        "default": "Alt+R"
+      },
+      "description": "Simplify reading level"
+    }
+  }
+}
