@@ -70,7 +70,7 @@ Turn any webpage into an AI‑powered workspace. Privacy‑first reading and wri
 3. **Verify Installation**
    ```javascript
    await ai.languageModel.availability();
-   // Should return: "readily"
+   // Should return: "available"
    ```
 4. **Check Model Status**
    - Visit: `chrome://on-device-internals/`
