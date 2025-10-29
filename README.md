@@ -63,7 +63,7 @@ Turn any webpage into an AI‑powered workspace. Privacy‑first reading and wri
 2. **Download AI Model**
    - Open DevTools Console (F12) on any page and run:
      ```javascript
-     const session = await ai.languageModel.create({
+     const session = await LanguageModel.create({
        monitor(m) {
          m.addEventListener("downloadprogress", e => {
            console.log(`Downloaded ${e.loaded} of ${e.total} bytes`);
