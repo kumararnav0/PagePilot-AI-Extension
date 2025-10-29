@@ -54,7 +54,12 @@ Turn any webpage into an AI‑powered workspace. Privacy‑first reading and wri
 #### Configuration Steps
 1. **Enable AI Flags**
    - Navigate to: `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` → set to **Enabled** → click **Relaunch**
+   - Navigate to: `chrome://flags/#prompt-api-for-gemini-nano` → set to **Enabled** → click **Relaunch**
+   - Navigate to: `chrome://flags/#summarization-api-for-gemini-nano` → set to **Enabled** → click **Relaunch**
+   - Navigate to: `chrome://flags/#writer-api-for-gemini-nano` → set to **Enabled** → click **Relaunch**\
+   - Navigate to: `chrome://flags/#proofreader-api-for-gemini-nano` → set to **Enabled** → click **Relaunch**
    - Navigate to: `chrome://flags/#rewriter-api-for-gemini-nano` → set to **Enabled** → click **Relaunch**
+   - Navigate to: `chrome://flags/#translation-api` → set to **Enabled** → click **Relaunch**
 2. **Download AI Model**
    - Open DevTools Console (F12) on any page and run:
      ```javascript
